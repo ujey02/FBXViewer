@@ -1,0 +1,311 @@
+/* FBXViewer.css */
+
+/* Global styles */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+  
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    color: #333;
+    line-height: 1.6;
+    overflow: hidden; /* Prevent scrolling */
+}
+  
+/* Main container */
+.fbx-viewer-container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden;
+    background-color: #f5f5f5;
+}
+  
+/* Header */
+.viewer-header {
+    background-color: #fff;
+    padding: 1rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    z-index: 10;
+}
+  
+.viewer-header h1 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 0;
+}
+  
+/* Main content area */
+.viewer-main {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+    position: relative; /* Add positioning context */
+}
+  
+/* Character panel */
+.character-panel {
+    width: 250px;
+    background-color: #fff;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+    padding: 1rem;
+    overflow-y: auto;
+    z-index: 5;
+    flex-shrink: 0; /* Prevent panel from shrinking */
+}
+  
+.character-panel h2 {
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+    font-weight: 500;
+}
+  
+.character-section {
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #eee;
+}
+  
+.character-section h3 {
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+    font-weight: 600;
+    color: #333;
+}
+  
+/* File input styling */
+.file-drop-area {
+    border: 2px solid #777;
+    border-radius: 8px;
+    padding: 0;
+    text-align: center;
+    margin-bottom: 0.75rem;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    background-color: #fff;
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1/1; /* Make it square */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+  
+.file-drop-area:hover,
+.file-drop-hover {
+    border-color: #4299e1;
+    background-color: #ebf8ff;
+}
+  
+.file-input-hidden {
+    display: none;
+}
+  
+.file-input-label {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 0.9rem;
+    width: 100%;
+    height: 100%;
+    padding: 1rem;
+}
+  
+.file-input-name {
+    margin-top: 0.5rem;
+    font-weight: 500;
+    text-align: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 100%;
+    color: #333;
+}
+  
+.file-drop-message {
+    margin-top: 0.25rem;
+    font-size: 0.85rem;
+    color: #666;
+    font-weight: normal;
+}
+  
+.checkbox-container {
+    display: flex;
+    align-items: center;
+    margin-top: 0.75rem;
+}
+  
+.checkbox-container input[type="checkbox"] {
+    margin-right: 0.5rem;
+    width: 18px;
+    height: 18px;
+    border: 2px solid #777;
+    border-radius: 4px;
+    appearance: none;
+    -webkit-appearance: none;
+    position: relative;
+    cursor: pointer;
+}
+
+.checkbox-container input[type="checkbox"]:checked {
+    background-color: #4299e1;
+    border-color: #4299e1;
+}
+
+.checkbox-container input[type="checkbox"]:checked::after {
+    content: '✓';
+    position: absolute;
+    color: white;
+    font-size: 12px;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+  
+.checkbox-container label {
+    font-size: 1rem;
+    font-weight: 500;
+}
+  
+/* Loading progress */
+.loading-container {
+    margin-top: 0.5rem;
+}
+  
+.loading-bar-bg {
+    height: 8px;
+    background-color: #eee;
+    border-radius: 4px;
+    overflow: hidden;
+}
+  
+.loading-bar-fill {
+    height: 100%;
+    background-color: #4299e1;
+    border-radius: 4px;
+    transition: width 0.3s ease;
+}
+  
+.loading-text {
+    font-size: 0.8rem;
+    color: #666;
+    margin-top: 0.25rem;
+}
+  
+/* 3D viewer */
+.viewer-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+  
+.three-container {
+    flex: 1;
+    background-color: #333;
+    position: relative;
+    overflow: hidden; /* Ensure content doesn't overflow */
+}
+  
+.three-mount {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    /* Make sure canvas is visible */
+    z-index: 1;
+}
+  
+/* Controls */
+.controls-container {
+    background-color: #fff;
+    padding: 1rem;
+    box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.1);
+    z-index: 5; /* Ensure controls are above 3D view */
+}
+  
+.controls-buttons {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+  
+.control-button {
+    background-color: #4299e1;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    margin-right: 0.5rem;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+  
+.control-button:hover {
+    background-color: #3182ce;
+}
+  
+.loop-checkbox {
+    display: flex;
+    align-items: center;
+    margin-left: 1rem;
+}
+  
+.loop-checkbox input {
+    margin-right: 0.5rem;
+}
+  
+/* Progress bar */
+.progress-bar-bg {
+    height: 16px;
+    background-color: #eee;
+    border-radius: 8px;
+    overflow: hidden;
+    cursor: pointer;
+    position: relative;
+    margin-bottom: 0.5rem;
+}
+  
+.progress-bar-fill {
+    height: 100%;
+    background-color: #48bb78;
+    border-radius: 8px;
+    transition: width 0.1s linear;
+}
+  
+.time-display {
+    font-size: 0.8rem;
+    color: #666;
+}
+  
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .viewer-main {
+        flex-direction: column;
+    }
+    
+    .character-panel {
+        width: 100%;
+        height: 200px;
+        flex-shrink: 0;
+    }
+}
+
+/* Fix for Three.js canvas */
+canvas {
+    display: block;
+    outline: none;
+}
+/* Fix for Three.js renderer positioning */
+.three-mount canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+}
