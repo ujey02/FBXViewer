@@ -1,4 +1,4 @@
-// hooks/useFileHandler.js
+// hooks/useFileHandler.js - Enhanced with unload functionality
 import { useState, useCallback, useEffect } from 'react';
 
 export function useFileHandler() {
@@ -72,9 +72,37 @@ export function useFileHandler() {
     });
     
     setFbxFiles(prev => {
+      // Revoke old URL if it exists
+      if (prev[index] && typeof prev[index] === 'string' && prev[index].startsWith('blob:')) {
+        URL.revokeObjectURL(prev[index]);
+      }
+      
       const newFiles = [...prev];
       newFiles[index] = objectUrl;
       return newFiles;
+    });
+  }, []);
+
+  // Unload file
+  const unloadFile = useCallback((index) => {
+    console.log(`Unloading file at index ${index}`);
+    
+    // Revoke URL if it exists
+    setFbxFiles(prev => {
+      if (prev[index] && typeof prev[index] === 'string' && prev[index].startsWith('blob:')) {
+        URL.revokeObjectURL(prev[index]);
+      }
+      
+      const newFiles = [...prev];
+      newFiles[index] = null;
+      return newFiles;
+    });
+    
+    // Reset file name
+    setFileNames(prev => {
+      const newFileNames = [...prev];
+      newFileNames[index] = 'Drag and drop';
+      return newFileNames;
     });
   }, []);
 
@@ -96,5 +124,6 @@ export function useFileHandler() {
     handleDragOver,
     handleDragLeave,
     handleDrop,
+    unloadFile,
   };
 }

@@ -1,4 +1,4 @@
-/* FBXViewer.css */
+/* Complete FBXViewer.css - Full Rewrite */
 
 /* Global styles */
 * {
@@ -11,7 +11,7 @@ body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
     color: #333;
     line-height: 1.6;
-    overflow: hidden; /* Prevent scrolling */
+    overflow: hidden;
 }
   
 /* Main container */
@@ -41,47 +41,153 @@ body {
 /* Main content area */
 .viewer-main {
     display: flex;
-    flex-direction: column; /* Change from row to column */
+    flex-direction: column;
     flex: 1;
     overflow: hidden;
 }
+
 .viewer-content {
     display: flex;
     flex: 1;
     overflow: hidden;
+    position: relative;
 }
-  
-/* Character panel */
+
+/* Fixed floating menu button - between header and panel */
+.panel-toggle-button {
+    position: fixed;
+    top: 70px;
+    left: 20px;
+    background: #4299e1;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    width: 40px;
+    height: 40px;
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    z-index: 20;
+}
+
+.panel-toggle-button:hover {
+    background: #3182ce;
+}
+
+/* Character panel - fixed height to avoid progress bar overlap */
 .character-panel {
-    width: 250px;
+    position: fixed;
+    top: 120px;
+    left: 20px;
+    width: 280px;
+    height: calc(100vh - 280px); /* Increased bottom margin to avoid progress bar */
     background-color: #fff;
-    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
-    padding: 1rem;
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.2);
+    padding: 0;
     overflow-y: auto;
-    z-index: 5;
-    flex-shrink: 0; /* Prevent panel from shrinking */
+    z-index: 15;
+    transform: translateX(0);
+    transition: transform 0.3s ease;
+    border-radius: 8px;
+    margin-bottom: 20px;
 }
-  
-.character-panel h2 {
+
+.character-panel.collapsed {
+    transform: translateX(-300px);
+}
+
+/* Panel header - no toggle button here */
+.panel-header {
+    display: flex;
+    align-items: center;
+    padding: 1rem;
+    border-bottom: 1px solid #eee;
+    background-color: #f8f9fa;
+}
+
+.panel-header h2 {
     font-size: 1.1rem;
-    margin-bottom: 1rem;
+    margin: 0;
     font-weight: 500;
+    flex: 1;
 }
-  
+
+/* Panel content */
+.panel-content {
+    padding: 1rem;
+}
+
+/* Character section */
 .character-section {
     margin-bottom: 1.5rem;
     padding-bottom: 1rem;
     border-bottom: 1px solid #eee;
 }
-  
-.character-section h3 {
+
+/* Character toggle header */
+.character-toggle-header {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem 0;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    border-radius: 4px;
+    margin-bottom: 0.5rem;
+}
+
+.character-toggle-header:hover {
+    background-color: #f8f9fa;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+}
+
+.toggle-arrow {
+    font-size: 0.8rem;
+    margin-right: 0.5rem;
+    transition: transform 0.2s ease;
+    color: #666;
+}
+
+.toggle-arrow.expanded {
+    transform: rotate(90deg);
+}
+
+.character-toggle-header h3 {
     font-size: 1.1rem;
-    margin-bottom: 1rem;
     font-weight: 600;
     color: #333;
+    margin: 0;
+    flex: 1;
 }
-  
-/* File input styling */
+
+.character-status {
+    color: #48bb78;
+    font-size: 0.8rem;
+    margin-left: auto;
+}
+
+/* Character details (collapsible content) */
+.character-details {
+    padding-left: 1.5rem;
+    animation: slideDown 0.2s ease;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Shorter drag and drop boxes */
 .file-drop-area {
     border: 2px solid #777;
     border-radius: 8px;
@@ -93,7 +199,7 @@ body {
     background-color: #fff;
     position: relative;
     width: 100%;
-    aspect-ratio: 1/1; /* Make it square */
+    height: 80px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -119,17 +225,17 @@ body {
     font-size: 0.9rem;
     width: 100%;
     height: 100%;
-    padding: 1rem;
+    padding: 0.5rem;
 }
   
 .file-input-name {
-    margin-top: 0.5rem;
     font-weight: 500;
     text-align: center;
     overflow: hidden;
     text-overflow: ellipsis;
     width: 100%;
     color: #333;
+    white-space: nowrap;
 }
   
 .file-drop-message {
@@ -138,11 +244,101 @@ body {
     color: #666;
     font-weight: normal;
 }
+
+/* Overlay unload button for drop areas */
+.unload-button-overlay {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: #ff4444;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    width: 32px;
+    height: 32px;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    z-index: 10;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+}
+
+.unload-button-overlay:hover {
+    background: #cc3333;
+    transform: scale(1.05);
+}
+
+/* Loading progress */
+.loading-container {
+    margin-bottom: 0.75rem;
+}
+  
+.loading-bar-bg {
+    height: 8px;
+    background-color: #eee;
+    border-radius: 4px;
+    overflow: hidden;
+}
+  
+.loading-bar-fill {
+    height: 100%;
+    background-color: #4299e1;
+    border-radius: 4px;
+    transition: width 0.3s ease;
+}
+  
+.loading-text {
+    font-size: 0.8rem;
+    color: #666;
+    margin-top: 0.25rem;
+}
+
+/* Animation details section */
+.animation-details {
+    margin-top: 0.75rem;
+    padding: 0.75rem;
+    background-color: #f8f9fa;
+    border-radius: 4px;
+    border: 1px solid #e9ecef;
+}
+
+.animation-details h4 {
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: #495057;
+}
+
+.detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.25rem;
+}
+
+.detail-row:last-child {
+    margin-bottom: 0;
+}
+
+.detail-label {
+    font-size: 0.8rem;
+    color: #6c757d;
+    font-weight: 500;
+}
+
+.detail-value {
+    font-size: 0.8rem;
+    color: #343a40;
+    font-weight: 600;
+}
   
 .checkbox-container {
     display: flex;
     align-items: center;
-    margin-top: 0.75rem;
 }
   
 .checkbox-container input[type="checkbox"] {
@@ -176,45 +372,67 @@ body {
     font-size: 1rem;
     font-weight: 500;
 }
-  
-/* Loading progress */
-.loading-container {
-    margin-top: 0.5rem;
+
+/* Scale control */
+.scale-control {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.scale-control label {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #555;
+}
+
+.scale-slider {
+    width: 100%;
+    height: 6px;
+    border-radius: 3px;
+    background: #ddd;
+    outline: none;
+    cursor: pointer;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.scale-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #4299e1;
+    cursor: pointer;
+    border: 2px solid white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.scale-slider::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #4299e1;
+    cursor: pointer;
+    border: 2px solid white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
 }
   
-.loading-bar-bg {
-    height: 8px;
-    background-color: #eee;
-    border-radius: 4px;
-    overflow: hidden;
-}
-  
-.loading-bar-fill {
-    height: 100%;
-    background-color: #4299e1;
-    border-radius: 4px;
-    transition: width 0.3s ease;
-}
-  
-.loading-text {
-    font-size: 0.8rem;
-    color: #666;
-    margin-top: 0.25rem;
-}
-  
-/* 3D viewer */
+/* 3D viewer - full space */
 .viewer-container {
     flex: 1;
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    width: 100%;
 }
   
 .three-container {
     flex: 1;
     background-color: #333;
     position: relative;
-    overflow: hidden; /* Ensure content doesn't overflow */
+    overflow: hidden;
 }
   
 .three-mount {
@@ -223,17 +441,16 @@ body {
     left: 0;
     width: 100%;
     height: 100%;
-    /* Make sure canvas is visible */
     z-index: 1;
 }
   
-/* Controls */
+/* Controls at bottom */
 .controls-container {
     background-color: #fff;
     padding: 1rem;
     box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.1);
     z-index: 5;
-    width: 100%; /* Full width at bottom */
+    width: 100%;
 }
   
 .controls-buttons {
@@ -293,14 +510,23 @@ body {
   
 /* Responsive adjustments */
 @media (max-width: 768px) {
-    .viewer-main {
-        flex-direction: column;
-    }
-    
     .character-panel {
         width: 100%;
-        height: 200px;
-        flex-shrink: 0;
+        height: 300px;
+        top: auto;
+        bottom: 60px;
+        transform: translateY(0);
+        border-radius: 8px 8px 0 0;
+    }
+    
+    .character-panel.collapsed {
+        transform: translateY(300px);
+    }
+    
+    .panel-toggle-button {
+        top: auto;
+        bottom: 10px;
+        left: 10px;
     }
 }
 
@@ -309,7 +535,7 @@ canvas {
     display: block;
     outline: none;
 }
-/* Fix for Three.js renderer positioning */
+
 .three-mount canvas {
     position: absolute;
     top: 0;

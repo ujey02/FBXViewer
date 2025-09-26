@@ -15,8 +15,10 @@ export default function FBXViewer() {
   const containerRef = useRef(null);
   const progressBarRef = useRef(null);
   
-  // Character visibility state
+  // Character visibility and scale state
   const [showCharacter, setShowCharacter] = useState([true, true]);
+  const [characterScales, setCharacterScales] = useState([1.0, 1.0]);
+  const [isPanelCollapsed, setIsPanelCollapsed] = useState(false);
 
   // Initialize Three.js scene
   const threeSceneHelpers = useThreeScene(containerRef, mountRef);
@@ -29,6 +31,7 @@ export default function FBXViewer() {
     handleDragOver,
     handleDragLeave,
     handleDrop,
+    unloadFile,
   } = useFileHandler();
 
   // Load FBX files
@@ -37,7 +40,11 @@ export default function FBXViewer() {
     animationMixers,
     duration,
     loadingProgress,
+    animationDetails,
     loadFBX,
+    unloadCharacter,
+    updateCharacterScale,
+    repositionCharacters,
   } = useFBXLoader(threeSceneHelpers, showCharacter, false, true);
 
   // Handle animation controls
@@ -53,7 +60,7 @@ export default function FBXViewer() {
     handleAnimationFrame,
   } = useAnimationControl(threeSceneHelpers, animationMixers, showCharacter, duration);
 
-  // Start animation loop - FIXED: only start once and don't depend on handleAnimationFrame
+  // Start animation loop
   useEffect(() => {
     const cleanup = threeSceneHelpers.startAnimationLoop(handleAnimationFrame);
     
@@ -62,7 +69,7 @@ export default function FBXViewer() {
         cleanup();
       }
     };
-  }, [threeSceneHelpers]); // Remove handleAnimationFrame dependency
+  }, [threeSceneHelpers]);
 
   // Update animation callback when it changes
   useEffect(() => {
@@ -71,15 +78,21 @@ export default function FBXViewer() {
     }
   }, [handleAnimationFrame, threeSceneHelpers]);
 
-  // Load FBX files when they change
+  // Load FBX files when they change - sync to current time if playing
   useEffect(() => {
     fbxFiles.forEach((file, index) => {
       if (file && file !== scenes[index]) {
         console.log(`Loading file at index ${index} because it's new or changed`);
-        loadFBX(file, index);
+        // Pass current time to sync new character to current playback position
+        loadFBX(file, index, currentTime);
       }
     });
-  }, [fbxFiles, scenes, loadFBX]);
+  }, [fbxFiles, scenes, loadFBX, currentTime]);
+
+  // Reposition characters when visibility changes
+  useEffect(() => {
+    repositionCharacters();
+  }, [showCharacter, repositionCharacters]);
 
   // Handle character visibility toggle
   const handleToggleCharacterVisibility = useCallback((index) => {
@@ -101,16 +114,46 @@ export default function FBXViewer() {
     });
   }, [threeSceneHelpers]);
 
+  // Handle character unload
+  const handleUnloadCharacter = useCallback((index) => {
+    unloadCharacter(index);
+    unloadFile(index);
+  }, [unloadCharacter, unloadFile]);
+
+  // Handle scale change
+  const handleScaleChange = useCallback((index, scale) => {
+    setCharacterScales(prev => {
+      const newScales = [...prev];
+      newScales[index] = scale;
+      return newScales;
+    });
+    updateCharacterScale(index, scale);
+  }, [updateCharacterScale]);
+
   // Handle progress bar click with ref
   const onProgressBarClick = useCallback((e) => {
     handleProgressBarClick(e, progressBarRef);
   }, [handleProgressBarClick]);
+
+  // Toggle panel collapse
+  const togglePanel = () => {
+    setIsPanelCollapsed(!isPanelCollapsed);
+  };
 
   return (
     <div className="fbx-viewer-container">
       <header className="viewer-header">
         <h1>3D FBX Motion Viewer</h1>
       </header>
+
+      {/* Menu toggle button */}
+      <button 
+        className="panel-toggle-button"
+        onClick={togglePanel}
+        title={isPanelCollapsed ? "Expand panel" : "Collapse panel"}
+      >
+        {isPanelCollapsed ? '▶' : '◀'}
+      </button>
       
       <main className="viewer-main">
         <div className="viewer-content">
@@ -118,12 +161,17 @@ export default function FBXViewer() {
             fileNames={fileNames}
             fbxFiles={fbxFiles}
             showCharacter={showCharacter}
+            characterScales={characterScales}
             loadingProgress={loadingProgress}
+            animationDetails={animationDetails}
+            isPanelCollapsed={isPanelCollapsed}
             onFileSelection={handleFileSelection}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
             onToggleCharacterVisibility={handleToggleCharacterVisibility}
+            onUnloadCharacter={handleUnloadCharacter}
+            onScaleChange={handleScaleChange}
             />
             
             <ViewerCanvas
