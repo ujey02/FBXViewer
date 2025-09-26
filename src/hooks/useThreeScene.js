@@ -1,4 +1,4 @@
-// hooks/useThreeScene.js
+// hooks/useThreeScene.js - Bright Modern 3D Scene
 import { useRef, useEffect, useCallback } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
@@ -22,42 +22,91 @@ export function useThreeScene(containerRef, mountRef) {
   useEffect(() => {
     if (!mountRef.current || !containerRef.current) return;
     
-    console.log("Initializing Three.js scene");
+    console.log("Initializing bright Three.js scene");
     
-    // Create scene
+    // Create scene with bright background
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x444444);
+    // Bright gradient-like background using fog
+    scene.background = new THREE.Color(0xf0f8ff); // Alice blue - very bright
+    scene.fog = new THREE.Fog(0xe6f3ff, 50, 100); // Subtle bright fog for depth
     
-    // Add lights
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+    // Enhanced lighting setup for bright scene
+    // Bright ambient light
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
     scene.add(ambientLight);
     
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
-    directionalLight.position.set(1, 1, 1);
-    scene.add(directionalLight);
+    // Primary directional light (key light)
+    const directionalLight1 = new THREE.DirectionalLight(0xffffff, 1.2);
+    directionalLight1.position.set(5, 10, 5);
+    directionalLight1.castShadow = true;
+    directionalLight1.shadow.mapSize.width = 2048;
+    directionalLight1.shadow.mapSize.height = 2048;
+    scene.add(directionalLight1);
     
-    // Add grid helper
-    const gridHelper = new THREE.GridHelper(10, 10);
+    // Secondary directional light (fill light)
+    const directionalLight2 = new THREE.DirectionalLight(0xe6f3ff, 0.8);
+    directionalLight2.position.set(-5, 8, -5);
+    scene.add(directionalLight2);
+    
+    // Top-down light for even illumination
+    const directionalLight3 = new THREE.DirectionalLight(0xfff8dc, 0.6);
+    directionalLight3.position.set(0, 15, 0);
+    scene.add(directionalLight3);
+    
+    // Add hemisphere light for natural outdoor feel
+    const hemisphereLight = new THREE.HemisphereLight(0x87ceeb, 0xf0f8ff, 0.6);
+    scene.add(hemisphereLight);
+    
+    // Brighter, more modern grid helper
+    const gridHelper = new THREE.GridHelper(
+      20, // size
+      20, // divisions
+      0xbdcfdc, // center line color - soft blue-gray
+      0xe2eaf2  // grid color - very light blue-gray
+    );
+    gridHelper.position.y = 0; // At ground level
     scene.add(gridHelper);
     
-    // Setup camera
+    // Setup camera with better initial position
     const camera = new THREE.PerspectiveCamera(
-      75, 
+      60, // Slightly narrower FOV for better focus
       containerRef.current.clientWidth / containerRef.current.clientHeight, 
       0.1, 
-      1000
+      200
     );
-    camera.position.set(0, 2, 5);
+    camera.position.set(0, 3, 8); // Better initial viewing angle
     
-    // Setup renderer
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    // Setup renderer with enhanced settings
+    const renderer = new THREE.WebGLRenderer({ 
+      antialias: true,
+      alpha: true,
+      powerPreference: "high-performance"
+    });
     renderer.setSize(containerRef.current.clientWidth, containerRef.current.clientHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    
+    // Enhanced renderer settings for bright, modern look
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.2; // Brighter exposure
+    renderer.outputEncoding = THREE.sRGBEncoding;
+    renderer.physicallyCorrectLights = true;
+    
+    // Set clear color to match CSS background
+    renderer.setClearColor(0xf0f8ff, 1);
+    
     mountRef.current.appendChild(renderer.domElement);
     
-    // Add orbit controls
+    // Enhanced orbit controls
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
+    controls.screenSpacePanning = false;
+    controls.minDistance = 2;
+    controls.maxDistance = 20;
+    controls.maxPolarAngle = Math.PI / 1.8; // Prevent going below ground
+    controls.autoRotate = false;
     
     // Store objects in ref
     threeObjects.current.scene = scene;
@@ -72,13 +121,14 @@ export function useThreeScene(containerRef, mountRef) {
       camera.aspect = containerRef.current.clientWidth / containerRef.current.clientHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(containerRef.current.clientWidth, containerRef.current.clientHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     };
     
     window.addEventListener('resize', handleResize);
     
     // Cleanup function
     return () => {
-      console.log("Cleaning up Three.js scene");
+      console.log("Cleaning up bright Three.js scene");
       
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
@@ -110,7 +160,7 @@ export function useThreeScene(containerRef, mountRef) {
     };
   }, [containerRef, mountRef]);
 
-  // Animation loop function - FIXED: Always use latest callback
+  // Animation loop function
   const startAnimationLoop = useCallback((onAnimationFrame) => {
     // Stop any existing animation loop
     if (animationFrameRef.current) {
@@ -132,7 +182,6 @@ export function useThreeScene(containerRef, mountRef) {
       }
       
       // Call the animation frame callback with delta time
-      // Always use the most recent callback
       if (currentAnimationCallback.current) {
         currentAnimationCallback.current(delta);
       }
@@ -170,6 +219,29 @@ export function useThreeScene(containerRef, mountRef) {
   // Add character to scene
   const addCharacterToScene = useCallback((character, index) => {
     if (threeObjects.current.scene && character) {
+      // Enable shadow casting/receiving for better visual quality
+      character.traverse((child) => {
+        if (child.isMesh) {
+          child.castShadow = true;
+          child.receiveShadow = true;
+          
+          // Enhance materials for brighter appearance
+          if (child.material) {
+            if (Array.isArray(child.material)) {
+              child.material.forEach(mat => {
+                if (mat.isMeshLambertMaterial || mat.isMeshPhongMaterial) {
+                  mat.needsUpdate = true;
+                }
+              });
+            } else {
+              if (child.material.isMeshLambertMaterial || child.material.isMeshPhongMaterial) {
+                child.material.needsUpdate = true;
+              }
+            }
+          }
+        }
+      });
+      
       threeObjects.current.scene.add(character);
       threeObjects.current.characters[index] = character;
     }

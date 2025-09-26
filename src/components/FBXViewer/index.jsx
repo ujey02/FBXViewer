@@ -1,4 +1,4 @@
-// components/FBXViewer/index.jsx
+// components/FBXViewer/index.jsx - Dynamic Panel Height
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { useThreeScene } from '../../hooks/useThreeScene';
 import { useFileHandler } from '../../hooks/useFileHandler';
@@ -14,6 +14,8 @@ export default function FBXViewer() {
   const mountRef = useRef(null);
   const containerRef = useRef(null);
   const progressBarRef = useRef(null);
+  const controlsRef = useRef(null);
+  const panelRef = useRef(null);
   
   // Character visibility and scale state
   const [showCharacter, setShowCharacter] = useState([true, true]);
@@ -59,6 +61,50 @@ export default function FBXViewer() {
     handleProgressBarClick,
     handleAnimationFrame,
   } = useAnimationControl(threeSceneHelpers, animationMixers, showCharacter, duration);
+
+  // Dynamic height calculation for panel
+  const updatePanelHeight = useCallback(() => {
+    if (controlsRef.current && panelRef.current) {
+      const controlsHeight = controlsRef.current.offsetHeight;
+      const viewportHeight = window.innerHeight;
+      const panelTop = 80; // Panel top position
+      const padding = 20; // Safety padding
+      
+      const availableHeight = viewportHeight - panelTop - controlsHeight - padding;
+      panelRef.current.style.height = `${Math.max(200, availableHeight)}px`; // Minimum 200px height
+    }
+  }, []);
+
+  // Update panel height on mount and resize
+  useEffect(() => {
+    const handleResize = () => {
+      updatePanelHeight();
+    };
+
+    // Initial calculation
+    updatePanelHeight();
+    
+    // Add resize listener
+    window.addEventListener('resize', handleResize);
+    
+    // Also update when controls might change height due to content
+    const observer = new ResizeObserver(updatePanelHeight);
+    if (controlsRef.current) {
+      observer.observe(controlsRef.current);
+    }
+    
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      observer.disconnect();
+    };
+  }, [updatePanelHeight]);
+
+  // Update panel height when controls content changes
+  useEffect(() => {
+    // Delay to ensure DOM is updated
+    const timeoutId = setTimeout(updatePanelHeight, 100);
+    return () => clearTimeout(timeoutId);
+  }, [isPlaying, duration, currentTime, updatePanelHeight]);
 
   // Start animation loop
   useEffect(() => {
@@ -142,9 +188,10 @@ export default function FBXViewer() {
 
   return (
     <div className="fbx-viewer-container">
-      <header className="viewer-header">
-        <h1>3D FBX Motion Viewer</h1>
-      </header>
+      {/* Floating title overlay */}
+      <div className="viewer-title">
+        <h1>3D Animation Viewer</h1>
+      </div>
 
       {/* Menu toggle button */}
       <button 
@@ -158,6 +205,7 @@ export default function FBXViewer() {
       <main className="viewer-main">
         <div className="viewer-content">
             <CharacterPanel
+            ref={panelRef}
             fileNames={fileNames}
             fbxFiles={fbxFiles}
             showCharacter={showCharacter}
@@ -182,6 +230,7 @@ export default function FBXViewer() {
 
         
         <PlaybackControls
+          ref={controlsRef}
           isPlaying={isPlaying}
           loop={loop}
           progress={progress}

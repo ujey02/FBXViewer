@@ -1,7 +1,7 @@
-// components/FBXViewer/PlaybackControls.jsx
-import React from 'react';
+// components/FBXViewer/PlaybackControls.jsx - forwardRef version
+import React, { forwardRef } from 'react';
 
-export default function PlaybackControls({
+const PlaybackControls = forwardRef(({
   isPlaying,
   loop,
   progress,
@@ -12,9 +12,9 @@ export default function PlaybackControls({
   onReset,
   onLoopToggle,
   onProgressBarClick,
-}) {
+}, ref) => {
   return (
-    <div className="controls-container">
+    <div ref={ref} className="controls-container">
       <div className="controls-buttons">
         <button
           className="control-button"
@@ -58,4 +58,8 @@ export default function PlaybackControls({
       </div>
     </div>
   );
-}
+});
+
+PlaybackControls.displayName = 'PlaybackControls';
+
+export default PlaybackControls;

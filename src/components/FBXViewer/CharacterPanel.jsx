@@ -1,7 +1,7 @@
-// components/FBXViewer/CharacterPanel.jsx
-import React, { useState } from 'react';
+// components/FBXViewer/CharacterPanel.jsx - Bright Modern Design with forwardRef
+import React, { useState, forwardRef } from 'react';
 
-export default function CharacterPanel({
+const CharacterPanel = forwardRef(({
   fileNames,
   fbxFiles,
   showCharacter,
@@ -16,7 +16,7 @@ export default function CharacterPanel({
   onToggleCharacterVisibility,
   onUnloadCharacter,
   onScaleChange,
-}) {
+}, ref) => {
   const [expandedCharacter, setExpandedCharacter] = useState([true, true]); // Both expanded by default
 
   // Check if loading for each character individually - with safe array access
@@ -31,11 +31,8 @@ export default function CharacterPanel({
     });
   };
 
-  // Debug: Log the animationDetails prop
-  console.log('CharacterPanel received animationDetails:', animationDetails);
-
   return (
-    <div className={`character-panel ${isPanelCollapsed ? 'collapsed' : ''}`}>
+    <div ref={ref} className={`character-panel ${isPanelCollapsed ? 'collapsed' : ''}`}>
       <div className="panel-header">
         <h2>Characters</h2>
       </div>
@@ -85,7 +82,7 @@ export default function CharacterPanel({
                       {isLoadingCharacter1 ? "Loading..." : fileNames[0]}
                     </span>
                     {!fbxFiles[0] && !isLoadingCharacter1 && (
-                      <span className="file-drop-message">drag and drop</span>
+                      <span className="file-drop-message">Drag & drop FBX file</span>
                     )}
                   </label>
                 </div>
@@ -100,7 +97,7 @@ export default function CharacterPanel({
                         checked={showCharacter[0]}
                         onChange={() => onToggleCharacterVisibility(0)}
                       />
-                      <label htmlFor="show-character-1">Show</label>
+                      <label htmlFor="show-character-1">Show Character</label>
                     </div>
                     
                     <div className="scale-control">
@@ -122,7 +119,7 @@ export default function CharacterPanel({
                 {/* Animation details - only show when loaded and has animation data */}
                 {fbxFiles[0] && !isLoadingCharacter1 && animationDetails?.[0] && (
                   <div className="animation-details">
-                    <h4>Animation Details</h4>
+                    <h4>Animation Info</h4>
                     <div className="detail-row">
                       <span className="detail-label">Name:</span>
                       <span className="detail-value">{animationDetails[0].name || 'Unnamed'}</span>
@@ -143,15 +140,6 @@ export default function CharacterPanel({
                       <span className="detail-label">Tracks:</span>
                       <span className="detail-value">{animationDetails[0].trackCount}</span>
                     </div>
-                  </div>
-                )}
-
-                {/* Debug info - remove this later */}
-                {process.env.NODE_ENV === 'development' && (
-                  <div style={{ fontSize: '10px', color: '#999', marginTop: '5px' }}>
-                    Debug: fbxFiles[0]={fbxFiles[0] ? 'YES' : 'NO'}, 
-                    loading={isLoadingCharacter1 ? 'YES' : 'NO'}, 
-                    animDetails={animationDetails?.[0] ? 'YES' : 'NO'}
                   </div>
                 )}
               </div>
@@ -201,7 +189,7 @@ export default function CharacterPanel({
                       {isLoadingCharacter2 ? "Loading..." : fileNames[1]}
                     </span>
                     {!fbxFiles[1] && !isLoadingCharacter2 && (
-                      <span className="file-drop-message">drag and drop</span>
+                      <span className="file-drop-message">Drag & drop FBX file</span>
                     )}
                   </label>
                 </div>
@@ -216,7 +204,7 @@ export default function CharacterPanel({
                         checked={showCharacter[1]}
                         onChange={() => onToggleCharacterVisibility(1)}
                       />
-                      <label htmlFor="show-character-2">Show</label>
+                      <label htmlFor="show-character-2">Show Character</label>
                     </div>
                     
                     <div className="scale-control">
@@ -238,7 +226,7 @@ export default function CharacterPanel({
                 {/* Animation details - only show when loaded and has animation data */}
                 {fbxFiles[1] && !isLoadingCharacter2 && animationDetails?.[1] && (
                   <div className="animation-details">
-                    <h4>Animation Details</h4>
+                    <h4>Animation Info</h4>
                     <div className="detail-row">
                       <span className="detail-label">Name:</span>
                       <span className="detail-value">{animationDetails[1].name || 'Unnamed'}</span>
@@ -261,15 +249,6 @@ export default function CharacterPanel({
                     </div>
                   </div>
                 )}
-
-                {/* Debug info - remove this later */}
-                {process.env.NODE_ENV === 'development' && (
-                  <div style={{ fontSize: '10px', color: '#999', marginTop: '5px' }}>
-                    Debug: fbxFiles[1]={fbxFiles[1] ? 'YES' : 'NO'}, 
-                    loading={isLoadingCharacter2 ? 'YES' : 'NO'}, 
-                    animDetails={animationDetails?.[1] ? 'YES' : 'NO'}
-                  </div>
-                )}
               </div>
             )}
           </div>
@@ -277,4 +256,8 @@ export default function CharacterPanel({
       )}
     </div>
   );
-}
+});
+
+CharacterPanel.displayName = 'CharacterPanel';
+
+export default CharacterPanel;
