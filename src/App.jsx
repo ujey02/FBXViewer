@@ -1,7 +1,6 @@
-
-// App.jsx
+// src/App.jsx
 import React from 'react';
-import FBXViewer from './FBXViewer';
+import FBXViewer from './components/FBXViewer';
 
 function App() {
   return (

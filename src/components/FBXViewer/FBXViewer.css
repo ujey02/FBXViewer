@@ -41,9 +41,14 @@ body {
 /* Main content area */
 .viewer-main {
     display: flex;
+    flex-direction: column; /* Change from row to column */
     flex: 1;
     overflow: hidden;
-    position: relative; /* Add positioning context */
+}
+.viewer-content {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
 }
   
 /* Character panel */
@@ -227,7 +232,8 @@ body {
     background-color: #fff;
     padding: 1rem;
     box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.1);
-    z-index: 5; /* Ensure controls are above 3D view */
+    z-index: 5;
+    width: 100%; /* Full width at bottom */
 }
   
 .controls-buttons {
