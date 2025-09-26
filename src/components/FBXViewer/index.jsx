@@ -53,10 +53,23 @@ export default function FBXViewer() {
     handleAnimationFrame,
   } = useAnimationControl(threeSceneHelpers, animationMixers, showCharacter, duration);
 
-  // Start animation loop
+  // Start animation loop - FIXED: only start once and don't depend on handleAnimationFrame
   useEffect(() => {
-    threeSceneHelpers.startAnimationLoop(handleAnimationFrame);
-  }, [threeSceneHelpers, handleAnimationFrame]);
+    const cleanup = threeSceneHelpers.startAnimationLoop(handleAnimationFrame);
+    
+    return () => {
+      if (cleanup && typeof cleanup === 'function') {
+        cleanup();
+      }
+    };
+  }, [threeSceneHelpers]); // Remove handleAnimationFrame dependency
+
+  // Update animation callback when it changes
+  useEffect(() => {
+    if (threeSceneHelpers.updateAnimationCallback) {
+      threeSceneHelpers.updateAnimationCallback(handleAnimationFrame);
+    }
+  }, [handleAnimationFrame, threeSceneHelpers]);
 
   // Load FBX files when they change
   useEffect(() => {

@@ -1,5 +1,5 @@
-// hooks/useAnimationControl.js
-import { useState, useEffect, useCallback } from 'react';
+// hooks/useAnimationControl.js - Timer-based approach
+import { useState, useEffect, useCallback, useRef } from 'react';
 import * as THREE from 'three';
 
 export function useAnimationControl(threeSceneHelpers, animationMixers, showCharacter, duration) {
@@ -7,6 +7,10 @@ export function useAnimationControl(threeSceneHelpers, animationMixers, showChar
   const [loop, setLoop] = useState(true);
   const [progress, setProgress] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
+
+  const startTimeRef = useRef(0);
+  const pausedTimeRef = useRef(0);
+  const timerRef = useRef(null);
 
   const { getAllAnimationActions, resetClock } = threeSceneHelpers;
 
@@ -47,43 +51,61 @@ export function useAnimationControl(threeSceneHelpers, animationMixers, showChar
     
   }, [isPlaying, loop, showCharacter, getAllAnimationActions, resetClock]);
 
-  // Animation frame callback for updating progress
-  const handleAnimationFrame = useCallback((delta) => {
-    if (isPlaying && animationMixers) {
-      let maxDuration = 0;
-      let maxCurrentTime = 0;
-      
-      animationMixers.forEach((mixer, index) => {
-        if (mixer && showCharacter[index]) {
-          mixer.update(delta);
-          
-          const action = getAllAnimationActions()[index];
-          if (action && action._clip) {
-            const clipDuration = action._clip.duration;
+  // Simple progress tracking - read from Three.js actions periodically
+  useEffect(() => {
+    let intervalId = null;
+    
+    if (isPlaying || duration > 0) {
+      // Update progress every 16ms (~60fps) by reading from animation actions
+      intervalId = setInterval(() => {
+        const actions = getAllAnimationActions();
+        let maxCurrentTime = 0;
+        
+        // Read current time from animation actions
+        actions.forEach((action, index) => {
+          if (action && action._clip && showCharacter[index]) {
             const time = action.time;
-            
-            if (clipDuration > maxDuration) {
-              maxDuration = clipDuration;
+            if (time > maxCurrentTime) {
               maxCurrentTime = time;
             }
           }
-        }
-      });
-      
-      if (maxDuration > 0) {
-        const progressValue = Math.min((maxCurrentTime / maxDuration) * 100, 100);
-        setProgress(progressValue);
+        });
+        
         setCurrentTime(maxCurrentTime);
         
-        if (maxCurrentTime >= maxDuration && !loop) {
-          console.log("All animations reached end, pausing");
-          setIsPlaying(false);
+        // Calculate progress based on current time and duration
+        if (duration > 0) {
+          const progressValue = Math.min((maxCurrentTime / duration) * 100, 100);
+          setProgress(progressValue);
+          
+          // Check for end of animation only when playing
+          if (isPlaying && !loop && maxCurrentTime >= duration) {
+            console.log("Animation reached end, pausing");
+            setIsPlaying(false);
+          }
         }
-      }
+        
+      }, 16); // ~60fps updates
     }
-  }, [isPlaying, animationMixers, showCharacter, loop, getAllAnimationActions]);
+    
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+    };
+  }, [isPlaying, duration, loop, showCharacter, getAllAnimationActions]);
 
-  // Toggle play/pause
+  // Simple animation frame callback - just updates mixers, no progress tracking
+  const handleAnimationFrame = useCallback((delta) => {
+    if (isPlaying && animationMixers) {
+      animationMixers.forEach((mixer, index) => {
+        if (mixer && showCharacter[index]) {
+          mixer.update(delta);
+        }
+      });
+    }
+  }, [isPlaying, animationMixers, showCharacter]);
+
   const togglePlay = useCallback(() => {
     if (currentTime >= duration && duration > 0) {
       // Reset and play
@@ -147,7 +169,8 @@ export function useAnimationControl(threeSceneHelpers, animationMixers, showChar
     
     console.log(`Seeking to ${seekTime.toFixed(2)}s (${percentage.toFixed(2)}%)`);
     
-    getAllAnimationActions().forEach((action) => {
+    const actions = getAllAnimationActions();
+    actions.forEach((action) => {
       if (action) {
         action.enabled = true;
         
@@ -160,9 +183,22 @@ export function useAnimationControl(threeSceneHelpers, animationMixers, showChar
       }
     });
     
-    setProgress(percentage);
+    // Force update the mixers once to reflect the seek position
+    if (animationMixers) {
+      animationMixers.forEach((mixer, index) => {
+        if (mixer && showCharacter[index]) {
+          mixer.update(0); // Update with 0 delta to just apply the time change
+        }
+      });
+    }
+    
+    // Update timer state
     setCurrentTime(seekTime);
-  }, [duration, isPlaying, getAllAnimationActions]);
+    pausedTimeRef.current = seekTime;
+    const progressValue = duration > 0 ? Math.min((seekTime / duration) * 100, 100) : 0;
+    setProgress(progressValue);
+    
+  }, [duration, isPlaying, getAllAnimationActions, animationMixers, showCharacter]);
 
   return {
     isPlaying,

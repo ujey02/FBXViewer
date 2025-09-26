@@ -16,6 +16,7 @@ export function useThreeScene(containerRef, mountRef) {
   });
 
   const animationFrameRef = useRef(null);
+  const currentAnimationCallback = useRef(null);
 
   // Initialize Three.js scene
   useEffect(() => {
@@ -109,8 +110,16 @@ export function useThreeScene(containerRef, mountRef) {
     };
   }, [containerRef, mountRef]);
 
-  // Animation loop function
+  // Animation loop function - FIXED: Always use latest callback
   const startAnimationLoop = useCallback((onAnimationFrame) => {
+    // Stop any existing animation loop
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+    }
+    
+    // Store the current callback
+    currentAnimationCallback.current = onAnimationFrame;
+    
     const animate = () => {
       const { scene, camera, renderer, controls, clock } = threeObjects.current;
       
@@ -123,8 +132,9 @@ export function useThreeScene(containerRef, mountRef) {
       }
       
       // Call the animation frame callback with delta time
-      if (onAnimationFrame) {
-        onAnimationFrame(delta);
+      // Always use the most recent callback
+      if (currentAnimationCallback.current) {
+        currentAnimationCallback.current(delta);
       }
       
       renderer.render(scene, camera);
@@ -132,6 +142,20 @@ export function useThreeScene(containerRef, mountRef) {
     };
     
     animate();
+    
+    // Return cleanup function
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
+      }
+      currentAnimationCallback.current = null;
+    };
+  }, []);
+
+  // Function to update animation callback without restarting loop
+  const updateAnimationCallback = useCallback((onAnimationFrame) => {
+    currentAnimationCallback.current = onAnimationFrame;
   }, []);
 
   // Stop animation loop
@@ -140,6 +164,7 @@ export function useThreeScene(containerRef, mountRef) {
       cancelAnimationFrame(animationFrameRef.current);
       animationFrameRef.current = null;
     }
+    currentAnimationCallback.current = null;
   }, []);
 
   // Add character to scene
@@ -193,6 +218,7 @@ export function useThreeScene(containerRef, mountRef) {
     threeObjects: threeObjects.current,
     startAnimationLoop,
     stopAnimationLoop,
+    updateAnimationCallback,
     addCharacterToScene,
     removeCharacterFromScene,
     getCharacter,
