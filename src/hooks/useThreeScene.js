@@ -219,6 +219,11 @@ export function useThreeScene(containerRef, mountRef) {
   // Add character to scene
   const addCharacterToScene = useCallback((character, index) => {
     if (threeObjects.current.scene && character) {
+      // First remove character if it's already in the scene to avoid duplicates
+      if (threeObjects.current.scene.children.includes(character)) {
+        threeObjects.current.scene.remove(character);
+      }
+      
       // Enable shadow casting/receiving for better visual quality
       character.traverse((child) => {
         if (child.isMesh) {
@@ -244,6 +249,7 @@ export function useThreeScene(containerRef, mountRef) {
       
       threeObjects.current.scene.add(character);
       threeObjects.current.characters[index] = character;
+      console.log(`Character ${index} added to scene`);
     }
   }, []);
 
@@ -252,7 +258,8 @@ export function useThreeScene(containerRef, mountRef) {
     const character = threeObjects.current.characters[index];
     if (threeObjects.current.scene && character) {
       threeObjects.current.scene.remove(character);
-      threeObjects.current.characters[index] = null;
+      console.log(`Character ${index} removed from scene`);
+      threeObjects.current.characters[index] = null
     }
   }, []);
 

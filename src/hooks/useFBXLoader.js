@@ -1,4 +1,4 @@
-// hooks/useFBXLoader.js - Enhanced with positioning, scale, and time sync
+// hooks/useFBXLoader.js - Fixed positioning based on visibility
 import { useState, useCallback, useEffect } from 'react';
 import * as THREE from 'three';
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader';
@@ -26,63 +26,88 @@ export function useFBXLoader(threeSceneHelpers, showCharacter, isPlaying, loop) 
     setAnimation,
   } = threeSceneHelpers;
 
-  // Position character based on how many exist and their visibility
+  // Position character based on visibility state, not just existence
   const positionCharacter = useCallback((object, index) => {
-    // Check current state of characters
-    const character1Exists = getCharacter(0) !== null || index === 0; // Include current if loading index 0
-    const character2Exists = getCharacter(1) !== null || index === 1; // Include current if loading index 1
-    const character1Visible = showCharacter[0];
-    const character2Visible = showCharacter[1];
+    // Check current visibility state (what should be visible)
+    const character1Visible = showCharacter[0] && getCharacter(0) !== null;
+    const character2Visible = showCharacter[1] && getCharacter(1) !== null;
     
-    // Only position side by side if both will exist AND both are visible
-    const bothWillExistAndVisible = character1Exists && character2Exists && character1Visible && character2Visible;
+    console.log(`Positioning character ${index}:`, {
+      character1Visible,
+      character2Visible,
+      showCharacter: showCharacter
+    });
     
-    if (bothWillExistAndVisible) {
-      // Position characters left and right when both are visible, but keep rotation at 0
+    // Position side by side only if both characters are visible
+    const bothVisible = character1Visible && character2Visible;
+    
+    if (bothVisible) {
+      // Both characters visible: position left and right
       object.position.x = index === 0 ? -2.0 : 2.0;
-      object.rotation.y = 0; // Keep both characters facing forward
     } else {
-      // Center character when only one is visible
+      // Only one character visible: center it
       object.position.x = 0;
-      object.rotation.y = 0;
     }
     
     object.position.y = 0;
     object.position.z = 0;
+    object.rotation.y = 0; // Keep facing forward
+    
+    console.log(`Character ${index} positioned at x=${object.position.x}`);
   }, [showCharacter, getCharacter]);
 
-  // Reposition all existing characters when visibility changes
+  // Reposition all existing characters based on current visibility
   const repositionCharacters = useCallback(() => {
+    console.log('Repositioning all characters, showCharacter:', showCharacter);
+    
     const character1 = getCharacter(0);
     const character2 = getCharacter(1);
+    
+    // Count how many characters are currently VISIBLE (not just existing)
+    const visibleCount = showCharacter.filter(visible => visible).length;
     const character1Visible = showCharacter[0];
     const character2Visible = showCharacter[1];
     
-    // Determine if both should be positioned side by side
-    const bothExistAndVisible = character1 && character2 && character1Visible && character2Visible;
+    console.log('Visibility check:', {
+      character1Exists: character1 !== null,
+      character2Exists: character2 !== null,
+      character1Visible,
+      character2Visible,
+      visibleCount
+    });
     
+    // Position character 1 if it exists
     if (character1) {
-      if (bothExistAndVisible) {
+      if (character2 && character2Visible && character1Visible) { // 캐릭터 2가 존할 경우
+        // Both visible: character 1 goes left
         character1.position.x = -2.0;
-        character1.rotation.y = 0; // Keep facing forward
-      } else {
+      } else if (character1Visible) {
+        // Only character 1 visible: center it
         character1.position.x = 0;
-        character1.rotation.y = 0;
       }
+      // If character 1 is not visible, don't reposition (it's hidden anyway)
+      
       character1.position.y = 0;
       character1.position.z = 0;
+      character1.rotation.y = 0;
+      console.log(`Character 1 repositioned to x=${character1.position.x}`);
     }
     
+    // Position character 2 if it exists
     if (character2) {
-      if (bothExistAndVisible) {
+      if (character1 && character1Visible && character2Visible) {
+        // Both visible: character 2 goes right
         character2.position.x = 2.0;
-        character2.rotation.y = 0; // Keep facing forward
-      } else {
+      } else if (character2Visible) {
+        // Only character 2 visible: center it
         character2.position.x = 0;
-        character2.rotation.y = 0;
       }
+      // If character 2 is not visible, don't reposition (it's hidden anyway)
+      
       character2.position.y = 0;
       character2.position.z = 0;
+      character2.rotation.y = 0;
+      console.log(`Character 2 repositioned to x=${character2.position.x}`);
     }
   }, [getCharacter, showCharacter]);
 
@@ -237,8 +262,8 @@ export function useFBXLoader(threeSceneHelpers, showCharacter, isPlaying, loop) 
           console.log(`Character ${index} loaded but hidden`);
         }
         
-        // Reposition all characters immediately after adding new one
-        repositionCharacters();
+        // Reposition all characters after loading
+        setTimeout(() => repositionCharacters(), 0);
         
         // Update loading progress - completed for this character
         setLoadingProgress(prev => {
@@ -308,8 +333,8 @@ export function useFBXLoader(threeSceneHelpers, showCharacter, isPlaying, loop) 
     setAnimationAction(index, null);
     setAnimation(index, null);
     
-    // Reposition remaining characters immediately
-    repositionCharacters();
+    // Reposition remaining characters
+    setTimeout(() => repositionCharacters(), 0);
   }, [getCharacter, removeCharacterFromScene, setAnimationAction, setAnimation, repositionCharacters]);
 
   // Update character scale

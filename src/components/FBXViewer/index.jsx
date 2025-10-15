@@ -138,7 +138,7 @@ export default function FBXViewer() {
   // Reposition characters when visibility changes
   useEffect(() => {
     repositionCharacters();
-  }, [showCharacter, repositionCharacters]);
+    }, [showCharacter]);
 
   // Handle character visibility toggle
   const handleToggleCharacterVisibility = useCallback((index) => {
@@ -146,19 +146,26 @@ export default function FBXViewer() {
       const newShowCharacter = [...prev];
       newShowCharacter[index] = !newShowCharacter[index];
       
-      // Immediately handle visibility
+      // Get the character object
       const character = threeSceneHelpers.getCharacter(index);
+      
       if (character) {
         if (newShowCharacter[index]) {
+          // Show character: add to scene and ensure positioning is correct
           threeSceneHelpers.addCharacterToScene(character, index);
+          // Trigger repositioning for all characters
+          setTimeout(() => repositionCharacters(), 0);
         } else {
+          // Hide character: remove from scene
           threeSceneHelpers.removeCharacterFromScene(index);
+          // Trigger repositioning for remaining characters
+          setTimeout(() => repositionCharacters(), 0);
         }
       }
       
       return newShowCharacter;
     });
-  }, [threeSceneHelpers]);
+  }, [threeSceneHelpers, repositionCharacters]);
 
   // Handle character unload
   const handleUnloadCharacter = useCallback((index) => {
