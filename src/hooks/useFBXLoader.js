@@ -12,6 +12,7 @@ export function useFBXLoader(threeSceneHelpers, showCharacter, isPlaying, loop) 
     { total: 0, loaded: 0, isLoading: false }
   ]);
   const [animationDetails, setAnimationDetails] = useState([null, null]);
+  const [boneList, setBoneList] = useState([[], []]); // Store bone names for each character
 
   // Debug: Log animationDetails changes
   useEffect(() => {
@@ -22,6 +23,7 @@ export function useFBXLoader(threeSceneHelpers, showCharacter, isPlaying, loop) 
     addCharacterToScene,
     removeCharacterFromScene,
     getCharacter,
+    removeBoneHelper,
     setAnimationAction,
     setAnimation,
   } = threeSceneHelpers;
@@ -128,7 +130,8 @@ export function useFBXLoader(threeSceneHelpers, showCharacter, isPlaying, loop) 
     if (getCharacter(index)) {
       console.log(`Removing previous character at index ${index}`);
       removeCharacterFromScene(index);
-      
+      removeBoneHelper(index); // Also remove bone helper
+
       // Update animation mixers
       setAnimationMixers(prev => {
         const newMixers = [...prev];
@@ -150,7 +153,24 @@ export function useFBXLoader(threeSceneHelpers, showCharacter, isPlaying, loop) 
         // Scale and position the model
         object.scale.set(0.02, 0.02, 0.02);
         positionCharacter(object, index);
-        
+
+        // Extract bone list (remove duplicates)
+        const bonesSet = new Set();
+        object.traverse((child) => {
+          if (child.isBone) {
+            bonesSet.add(child.name);
+          }
+        });
+        const bones = Array.from(bonesSet).sort(); // Convert to array and sort alphabetically
+
+        // Store bone list
+        setBoneList(prev => {
+          const newBoneList = [...prev];
+          newBoneList[index] = bones;
+          console.log(`Extracted ${bones.length} unique bones from character ${index}:`, bones);
+          return newBoneList;
+        });
+
         // Setup animations
         let mixer = null;
         let action = null;
@@ -299,12 +319,13 @@ export function useFBXLoader(threeSceneHelpers, showCharacter, isPlaying, loop) 
   // Unload character
   const unloadCharacter = useCallback((index) => {
     console.log(`Unloading character ${index}`);
-    
+
     // Remove from scene
     if (getCharacter(index)) {
       removeCharacterFromScene(index);
+      removeBoneHelper(index); // Also remove bone helper
     }
-    
+
     // Stop and clear animation mixer
     setAnimationMixers(prev => {
       const newMixers = [...prev];
@@ -314,7 +335,7 @@ export function useFBXLoader(threeSceneHelpers, showCharacter, isPlaying, loop) 
       newMixers[index] = null;
       return newMixers;
     });
-    
+
     // Clear scene reference
     setScenes(prev => {
       const newScenes = [...prev];
@@ -328,14 +349,21 @@ export function useFBXLoader(threeSceneHelpers, showCharacter, isPlaying, loop) 
       newDetails[index] = null;
       return newDetails;
     });
-    
+
+    // Clear bone list
+    setBoneList(prev => {
+      const newBoneList = [...prev];
+      newBoneList[index] = [];
+      return newBoneList;
+    });
+
     // Clear animation references
     setAnimationAction(index, null);
     setAnimation(index, null);
-    
+
     // Reposition remaining characters
     setTimeout(() => repositionCharacters(), 0);
-  }, [getCharacter, removeCharacterFromScene, setAnimationAction, setAnimation, repositionCharacters]);
+  }, [getCharacter, removeCharacterFromScene, removeBoneHelper, setAnimationAction, setAnimation, repositionCharacters]);
 
   // Update character scale
   const updateCharacterScale = useCallback((index, scale) => {
@@ -352,6 +380,7 @@ export function useFBXLoader(threeSceneHelpers, showCharacter, isPlaying, loop) 
     duration,
     loadingProgress,
     animationDetails,
+    boneList,
     loadFBX,
     unloadCharacter,
     updateCharacterScale,

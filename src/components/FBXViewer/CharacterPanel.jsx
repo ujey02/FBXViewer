@@ -5,6 +5,9 @@ const CharacterPanel = forwardRef(({
   fileNames,
   fbxFiles,
   showCharacter,
+  showBone,
+  selectedBone,
+  boneList,
   characterScales,
   loadingProgress,
   animationDetails,
@@ -14,6 +17,8 @@ const CharacterPanel = forwardRef(({
   onDragLeave,
   onDrop,
   onToggleCharacterVisibility,
+  onToggleBoneVisibility,
+  onBoneSelection,
   onUnloadCharacter,
   onScaleChange,
 }, ref) => {
@@ -99,14 +104,44 @@ const CharacterPanel = forwardRef(({
                       />
                       <label htmlFor="show-character-1">Show Character</label>
                     </div>
-                    
+
+                    <div className="checkbox-container">
+                      <input
+                        type="checkbox"
+                        id="show-bone-1"
+                        checked={showBone[0]}
+                        onChange={() => onToggleBoneVisibility(0)}
+                      />
+                      <label htmlFor="show-bone-1">Show Bone</label>
+                    </div>
+
+                    {/* Bone dropdown - only show when show bone is enabled */}
+                    {showBone[0] && boneList[0] && boneList[0].length > 0 && (
+                      <div className="bone-select-control">
+                        <label htmlFor="bone-select-1">Select Bone:</label>
+                        <select
+                          id="bone-select-1"
+                          value={selectedBone[0] || ''}
+                          onChange={(e) => onBoneSelection(0, e.target.value || null)}
+                          className="bone-dropdown"
+                        >
+                          <option value="">-- Select a bone --</option>
+                          {boneList[0].map((boneName, idx) => (
+                            <option key={idx} value={boneName}>
+                              {boneName}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+
                     <div className="scale-control">
                       <label htmlFor="scale-1">Scale: {characterScales[0].toFixed(2)}</label>
                       <input
                         type="range"
                         id="scale-1"
                         min="0.5"
-                        max="3.0"
+                        max="10.0"
                         step="0.1"
                         value={characterScales[0]}
                         onChange={(e) => onScaleChange(0, parseFloat(e.target.value))}
@@ -206,14 +241,44 @@ const CharacterPanel = forwardRef(({
                       />
                       <label htmlFor="show-character-2">Show Character</label>
                     </div>
-                    
+
+                    <div className="checkbox-container">
+                      <input
+                        type="checkbox"
+                        id="show-bone-2"
+                        checked={showBone[1]}
+                        onChange={() => onToggleBoneVisibility(1)}
+                      />
+                      <label htmlFor="show-bone-2">Show Bone</label>
+                    </div>
+
+                    {/* Bone dropdown - only show when show bone is enabled */}
+                    {showBone[1] && boneList[1] && boneList[1].length > 0 && (
+                      <div className="bone-select-control">
+                        <label htmlFor="bone-select-2">Select Bone:</label>
+                        <select
+                          id="bone-select-2"
+                          value={selectedBone[1] || ''}
+                          onChange={(e) => onBoneSelection(1, e.target.value || null)}
+                          className="bone-dropdown"
+                        >
+                          <option value="">-- Select a bone --</option>
+                          {boneList[1].map((boneName, idx) => (
+                            <option key={idx} value={boneName}>
+                              {boneName}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+
                     <div className="scale-control">
                       <label htmlFor="scale-2">Scale: {characterScales[1].toFixed(2)}</label>
                       <input
                         type="range"
                         id="scale-2"
                         min="0.5"
-                        max="3.0"
+                        max="10.0"
                         step="0.1"
                         value={characterScales[1]}
                         onChange={(e) => onScaleChange(1, parseFloat(e.target.value))}

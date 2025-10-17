@@ -11,6 +11,8 @@ export function useThreeScene(containerRef, mountRef) {
     controls: null,
     clock: new THREE.Clock(),
     characters: [null, null],
+    boneHelpers: [null, null],
+    highlightedBoneNames: [null, null], // Store currently highlighted bone names
     animationActions: [null, null],
     animations: [null, null],
   });
@@ -293,6 +295,131 @@ export function useThreeScene(containerRef, mountRef) {
     threeObjects.current.clock.getDelta();
   }, []);
 
+  // Add bone helper to visualize skeleton
+  const addBoneHelper = useCallback((character, index) => {
+    if (!threeObjects.current.scene || !character) return;
+
+    // Remove existing bone helper if present
+    removeBoneHelper(index);
+
+    // Find the skeleton in the character
+    let skeleton = null;
+    character.traverse((child) => {
+      if (child.isSkinnedMesh && child.skeleton) {
+        skeleton = child.skeleton;
+      }
+    });
+
+    if (skeleton) {
+      const boneHelper = new THREE.SkeletonHelper(character);
+      boneHelper.material.linewidth = 2;
+
+      // Use VertexColors to allow per-bone coloring
+      boneHelper.material.vertexColors = true;
+      boneHelper.material.needsUpdate = true;
+
+      threeObjects.current.scene.add(boneHelper);
+      threeObjects.current.boneHelpers[index] = boneHelper;
+
+      // Initialize colors (red by default)
+      updateBoneHelperColors(index);
+
+      console.log(`Bone helper ${index} added to scene`);
+    } else {
+      console.warn(`No skeleton found in character ${index}`);
+    }
+  }, []);
+
+  // Remove bone helper from scene
+  const removeBoneHelper = useCallback((index) => {
+    const boneHelper = threeObjects.current.boneHelpers[index];
+    if (threeObjects.current.scene && boneHelper) {
+      threeObjects.current.scene.remove(boneHelper);
+      if (boneHelper.geometry) boneHelper.geometry.dispose();
+      if (boneHelper.material) boneHelper.material.dispose();
+      threeObjects.current.boneHelpers[index] = null;
+      threeObjects.current.highlightedBoneNames[index] = null;
+      console.log(`Bone helper ${index} removed from scene`);
+    }
+  }, []);
+
+  // Get bone helper reference
+  const getBoneHelper = useCallback((index) => {
+    return threeObjects.current.boneHelpers[index];
+  }, []);
+
+  // Update bone helper colors based on highlighted bone
+  const updateBoneHelperColors = useCallback((index) => {
+    const boneHelper = threeObjects.current.boneHelpers[index];
+    const character = threeObjects.current.characters[index];
+    const highlightedBoneName = threeObjects.current.highlightedBoneNames[index];
+
+    if (!boneHelper || !character) return;
+
+    const geometry = boneHelper.geometry;
+    const colors = [];
+
+    // Build a map of bone names to their indices in the skeleton helper
+    const bones = [];
+    character.traverse((child) => {
+      if (child.isBone) {
+        bones.push(child);
+      }
+    });
+
+    // Color each line segment
+    const positions = geometry.attributes.position;
+    const numVertices = positions.count;
+
+    for (let i = 0; i < numVertices; i += 2) {
+      // Each pair of vertices forms a line (bone)
+      // Get the bone index from the skeleton helper
+      const boneIndex = Math.floor(i / 2);
+
+      let color;
+      if (highlightedBoneName && bones[boneIndex] && bones[boneIndex].name === highlightedBoneName) {
+        // Cyan for highlighted bone
+        color = new THREE.Color(0x00ffff);
+      } else {
+        // Red for all other bones
+        color = new THREE.Color(0xff0000);
+      }
+
+      // Add color for both vertices of the line segment
+      colors.push(color.r, color.g, color.b);
+      colors.push(color.r, color.g, color.b);
+    }
+
+    geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+    geometry.attributes.color.needsUpdate = true;
+  }, []);
+
+  // Highlight a specific bone by coloring it in the skeleton helper
+  const highlightBone = useCallback((characterIndex, boneName) => {
+    // Store the highlighted bone name
+    threeObjects.current.highlightedBoneNames[characterIndex] = boneName;
+
+    // Update the bone helper colors
+    updateBoneHelperColors(characterIndex);
+
+    if (boneName) {
+      console.log(`Highlighted bone: ${boneName} at character ${characterIndex}`);
+    }
+  }, [updateBoneHelperColors]);
+
+  // Remove highlighted bone
+  const removeHighlightedBone = useCallback((index) => {
+    threeObjects.current.highlightedBoneNames[index] = null;
+    updateBoneHelperColors(index);
+    console.log(`Removed highlighted bone for character ${index}`);
+  }, [updateBoneHelperColors]);
+
+  // Update highlighted bone position (no longer needed with direct coloring)
+  const updateHighlightedBone = useCallback((index) => {
+    // No-op now since we're coloring the skeleton helper directly
+    // The skeleton helper automatically updates with the bones
+  }, []);
+
   return {
     threeObjects: threeObjects.current,
     startAnimationLoop,
@@ -301,6 +428,12 @@ export function useThreeScene(containerRef, mountRef) {
     addCharacterToScene,
     removeCharacterFromScene,
     getCharacter,
+    addBoneHelper,
+    removeBoneHelper,
+    getBoneHelper,
+    highlightBone,
+    removeHighlightedBone,
+    updateHighlightedBone,
     setAnimationAction,
     getAnimationAction,
     setAnimation,

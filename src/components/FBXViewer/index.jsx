@@ -19,6 +19,8 @@ export default function FBXViewer() {
   
   // Character visibility and scale state
   const [showCharacter, setShowCharacter] = useState([true, true]);
+  const [showBone, setShowBone] = useState([false, false]);
+  const [selectedBone, setSelectedBone] = useState([null, null]); // Selected bone for each character
   const [characterScales, setCharacterScales] = useState([1.0, 1.0]);
   const [isPanelCollapsed, setIsPanelCollapsed] = useState(false);
 
@@ -43,6 +45,7 @@ export default function FBXViewer() {
     duration,
     loadingProgress,
     animationDetails,
+    boneList,
     loadFBX,
     unloadCharacter,
     updateCharacterScale,
@@ -59,8 +62,16 @@ export default function FBXViewer() {
     togglePlay,
     resetAnimation,
     handleProgressBarClick,
-    handleAnimationFrame,
+    handleAnimationFrame: baseHandleAnimationFrame,
   } = useAnimationControl(threeSceneHelpers, animationMixers, showCharacter, duration);
+
+  // Enhanced animation frame handler that also updates highlighted bones
+  const handleAnimationFrame = useCallback((delta) => {
+    baseHandleAnimationFrame(delta);
+    // Update highlighted bone positions for both characters
+    threeSceneHelpers.updateHighlightedBone(0);
+    threeSceneHelpers.updateHighlightedBone(1);
+  }, [baseHandleAnimationFrame, threeSceneHelpers]);
 
   // Dynamic height calculation for panel
   const updatePanelHeight = useCallback(() => {
@@ -183,6 +194,52 @@ export default function FBXViewer() {
     updateCharacterScale(index, scale);
   }, [updateCharacterScale]);
 
+  // Handle bone visibility toggle
+  const handleToggleBoneVisibility = useCallback((index) => {
+    setShowBone(prev => {
+      const newShowBone = [...prev];
+      newShowBone[index] = !newShowBone[index];
+
+      // Get the character object
+      const character = threeSceneHelpers.getCharacter(index);
+
+      if (character) {
+        if (newShowBone[index]) {
+          // Show bones: add bone helper to scene
+          threeSceneHelpers.addBoneHelper(character, index);
+        } else {
+          // Hide bones: remove bone helper from scene
+          threeSceneHelpers.removeBoneHelper(index);
+          // Also remove highlighted bone and clear selection
+          threeSceneHelpers.removeHighlightedBone(index);
+          setSelectedBone(prevSelected => {
+            const newSelected = [...prevSelected];
+            newSelected[index] = null;
+            return newSelected;
+          });
+        }
+      }
+
+      return newShowBone;
+    });
+  }, [threeSceneHelpers]);
+
+  // Handle bone selection from dropdown
+  const handleBoneSelection = useCallback((index, boneName) => {
+    setSelectedBone(prev => {
+      const newSelectedBone = [...prev];
+      newSelectedBone[index] = boneName;
+      return newSelectedBone;
+    });
+
+    // Highlight the selected bone
+    if (boneName) {
+      threeSceneHelpers.highlightBone(index, boneName);
+    } else {
+      threeSceneHelpers.removeHighlightedBone(index);
+    }
+  }, [threeSceneHelpers]);
+
   // Handle progress bar click with ref
   const onProgressBarClick = useCallback((e) => {
     handleProgressBarClick(e, progressBarRef);
@@ -216,6 +273,9 @@ export default function FBXViewer() {
             fileNames={fileNames}
             fbxFiles={fbxFiles}
             showCharacter={showCharacter}
+            showBone={showBone}
+            selectedBone={selectedBone}
+            boneList={boneList}
             characterScales={characterScales}
             loadingProgress={loadingProgress}
             animationDetails={animationDetails}
@@ -225,6 +285,8 @@ export default function FBXViewer() {
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
             onToggleCharacterVisibility={handleToggleCharacterVisibility}
+            onToggleBoneVisibility={handleToggleBoneVisibility}
+            onBoneSelection={handleBoneSelection}
             onUnloadCharacter={handleUnloadCharacter}
             onScaleChange={handleScaleChange}
             />
