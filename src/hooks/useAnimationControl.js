@@ -53,44 +53,56 @@ export function useAnimationControl(threeSceneHelpers, animationMixers, showChar
 
   // Simple progress tracking - read from Three.js actions periodically
   useEffect(() => {
-    let intervalId = null;
-    
-    if (isPlaying || duration > 0) {
-      // Update progress every 16ms (~60fps) by reading from animation actions
-      intervalId = setInterval(() => {
+    let animationFrameId = null;
+
+    if (duration > 0) {
+      // Update progress using requestAnimationFrame for smoother updates
+      const updateProgress = () => {
         const actions = getAllAnimationActions();
         let maxCurrentTime = 0;
-        
+        let foundAction = false;
+
         // Read current time from animation actions
         actions.forEach((action, index) => {
           if (action && action._clip && showCharacter[index]) {
+            foundAction = true;
             const time = action.time;
             if (time > maxCurrentTime) {
               maxCurrentTime = time;
             }
           }
         });
-        
+
+        // If no actions found, don't update
+        if (!foundAction && maxCurrentTime === 0) {
+          animationFrameId = requestAnimationFrame(updateProgress);
+          return;
+        }
+
         setCurrentTime(maxCurrentTime);
-        
+
         // Calculate progress based on current time and duration
         if (duration > 0) {
           const progressValue = Math.min((maxCurrentTime / duration) * 100, 100);
           setProgress(progressValue);
-          
+
           // Check for end of animation only when playing
           if (isPlaying && !loop && maxCurrentTime >= duration) {
             console.log("Animation reached end, pausing");
             setIsPlaying(false);
           }
         }
-        
-      }, 16); // ~60fps updates
+
+        // Continue updating
+        animationFrameId = requestAnimationFrame(updateProgress);
+      };
+
+      updateProgress();
     }
-    
+
     return () => {
-      if (intervalId) {
-        clearInterval(intervalId);
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
       }
     };
   }, [isPlaying, duration, loop, showCharacter, getAllAnimationActions]);
