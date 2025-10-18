@@ -2,6 +2,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import * as THREE from 'three';
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader';
+import { VIEWER_CONFIG } from '../config/viewerConfig';
 
 export function useFBXLoader(threeSceneHelpers, showCharacter, isPlaying, loop) {
   const [scenes, setScenes] = useState([null, null]);
@@ -151,7 +152,7 @@ export function useFBXLoader(threeSceneHelpers, showCharacter, isPlaying, loop) 
         console.log(`FBX file loaded successfully for index ${index}`, object);
         
         // Scale and position the model
-        object.scale.set(0.02, 0.02, 0.02);
+        object.scale.set(VIEWER_CONFIG.BASE_SCALE, VIEWER_CONFIG.BASE_SCALE, VIEWER_CONFIG.BASE_SCALE);
         positionCharacter(object, index);
 
         // Extract bone list (remove duplicates)
@@ -369,9 +370,26 @@ export function useFBXLoader(threeSceneHelpers, showCharacter, isPlaying, loop) 
   const updateCharacterScale = useCallback((index, scale) => {
     const character = getCharacter(index);
     if (character) {
-      const baseScale = 0.02;
-      character.scale.set(baseScale * scale, baseScale * scale, baseScale * scale);
+      character.scale.set(
+        VIEWER_CONFIG.BASE_SCALE * scale,
+        VIEWER_CONFIG.BASE_SCALE * scale,
+        VIEWER_CONFIG.BASE_SCALE * scale
+      );
     }
+  }, [getCharacter]);
+
+  // Calculate character height (bounding box height)
+  const calculateCharacterHeight = useCallback((index) => {
+    const character = getCharacter(index);
+    if (!character) return 0;
+
+    // Create a bounding box for the character
+    const box = new THREE.Box3().setFromObject(character);
+    const size = new THREE.Vector3();
+    box.getSize(size);
+
+    // Return the Y height (accounting for current scale)
+    return size.y;
   }, [getCharacter]);
 
   return {
@@ -384,6 +402,7 @@ export function useFBXLoader(threeSceneHelpers, showCharacter, isPlaying, loop) 
     loadFBX,
     unloadCharacter,
     updateCharacterScale,
+    calculateCharacterHeight,
     repositionCharacters,
   };
 }

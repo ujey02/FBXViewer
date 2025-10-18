@@ -9,6 +9,7 @@ const CharacterPanel = forwardRef(({
   selectedBone,
   boneList,
   characterScales,
+  normalizeScale,
   loadingProgress,
   animationDetails,
   isPanelCollapsed,
@@ -19,6 +20,7 @@ const CharacterPanel = forwardRef(({
   onToggleCharacterVisibility,
   onToggleBoneVisibility,
   onBoneSelection,
+  onToggleNormalize,
   onUnloadCharacter,
   onScaleChange,
 }, ref) => {
@@ -135,6 +137,16 @@ const CharacterPanel = forwardRef(({
                       </div>
                     )}
 
+                    <div className="checkbox-container">
+                      <input
+                        type="checkbox"
+                        id="normalize-1"
+                        checked={normalizeScale[0]}
+                        onChange={() => onToggleNormalize(0)}
+                      />
+                      <label htmlFor="normalize-1">Normalize</label>
+                    </div>
+
                     <div className="scale-control">
                       <label htmlFor="scale-1">Scale: {characterScales[0].toFixed(2)}</label>
                       <input
@@ -146,6 +158,7 @@ const CharacterPanel = forwardRef(({
                         value={characterScales[0]}
                         onChange={(e) => onScaleChange(0, parseFloat(e.target.value))}
                         className="scale-slider"
+                        disabled={normalizeScale[0]}
                       />
                     </div>
                   </div>
@@ -272,6 +285,16 @@ const CharacterPanel = forwardRef(({
                       </div>
                     )}
 
+                    <div className="checkbox-container">
+                      <input
+                        type="checkbox"
+                        id="normalize-2"
+                        checked={normalizeScale[1]}
+                        onChange={() => onToggleNormalize(1)}
+                      />
+                      <label htmlFor="normalize-2">Normalize</label>
+                    </div>
+
                     <div className="scale-control">
                       <label htmlFor="scale-2">Scale: {characterScales[1].toFixed(2)}</label>
                       <input
@@ -283,6 +306,7 @@ const CharacterPanel = forwardRef(({
                         value={characterScales[1]}
                         onChange={(e) => onScaleChange(1, parseFloat(e.target.value))}
                         className="scale-slider"
+                        disabled={normalizeScale[1]}
                       />
                     </div>
                   </div>

@@ -7,6 +7,7 @@ import { useAnimationControl } from '../../hooks/useAnimationControl';
 import CharacterPanel from './CharacterPanel';
 import ViewerCanvas from './ViewerCanvas';
 import PlaybackControls from './PlaybackControls';
+import { VIEWER_CONFIG } from '../../config/viewerConfig';
 import './FBXViewer.css';
 
 export default function FBXViewer() {
@@ -22,6 +23,7 @@ export default function FBXViewer() {
   const [showBone, setShowBone] = useState([false, false]);
   const [selectedBone, setSelectedBone] = useState([null, null]); // Selected bone for each character
   const [characterScales, setCharacterScales] = useState([1.0, 1.0]);
+  const [normalizeScale, setNormalizeScale] = useState([false, false]); // Normalize scale to height=1
   const [isPanelCollapsed, setIsPanelCollapsed] = useState(false);
 
   // Initialize Three.js scene
@@ -49,6 +51,7 @@ export default function FBXViewer() {
     loadFBX,
     unloadCharacter,
     updateCharacterScale,
+    calculateCharacterHeight,
     repositionCharacters,
   } = useFBXLoader(threeSceneHelpers, showCharacter, false, true);
 
@@ -191,8 +194,26 @@ export default function FBXViewer() {
       newScales[index] = scale;
       return newScales;
     });
-    updateCharacterScale(index, scale);
-  }, [updateCharacterScale]);
+
+    const character = threeSceneHelpers.getCharacter(index);
+    if (character) {
+      if (normalizeScale[index]) {
+        // In normalize mode: apply scale with normalization
+        const height = calculateCharacterHeight(index);
+        if (height > 0) {
+          const normalizedScale = (VIEWER_CONFIG.NORMALIZED_HEIGHT / height) * scale;
+          character.scale.set(
+            VIEWER_CONFIG.BASE_SCALE * normalizedScale,
+            VIEWER_CONFIG.BASE_SCALE * normalizedScale,
+            VIEWER_CONFIG.BASE_SCALE * normalizedScale
+          );
+        }
+      } else {
+        // Normal mode: just apply scale directly
+        updateCharacterScale(index, scale);
+      }
+    }
+  }, [updateCharacterScale, threeSceneHelpers, normalizeScale, calculateCharacterHeight]);
 
   // Handle bone visibility toggle
   const handleToggleBoneVisibility = useCallback((index) => {
@@ -240,6 +261,39 @@ export default function FBXViewer() {
     }
   }, [threeSceneHelpers]);
 
+  // Handle normalize toggle
+  const handleToggleNormalize = useCallback((index) => {
+    const newNormalize = !normalizeScale[index];
+
+    setNormalizeScale(prev => {
+      const updated = [...prev];
+      updated[index] = newNormalize;
+      return updated;
+    });
+
+    // Apply scale change immediately
+    const character = threeSceneHelpers.getCharacter(index);
+    if (character) {
+      if (newNormalize) {
+        // Normalize: calculate height and scale to normalized height
+        const height = calculateCharacterHeight(index);
+        if (height > 0) {
+          const normalizedScale = (VIEWER_CONFIG.NORMALIZED_HEIGHT / height) * characterScales[index];
+          character.scale.set(
+            VIEWER_CONFIG.BASE_SCALE * normalizedScale,
+            VIEWER_CONFIG.BASE_SCALE * normalizedScale,
+            VIEWER_CONFIG.BASE_SCALE * normalizedScale
+          );
+          console.log(`Normalized character ${index} to height=${VIEWER_CONFIG.NORMALIZED_HEIGHT}, height was ${height.toFixed(2)}, applied scale: ${normalizedScale.toFixed(4)}`);
+        }
+      } else {
+        // Denormalize: use the user's scale setting
+        updateCharacterScale(index, characterScales[index]);
+        console.log(`Denormalized character ${index}, applied scale: ${characterScales[index].toFixed(2)}`);
+      }
+    }
+  }, [normalizeScale, threeSceneHelpers, calculateCharacterHeight, characterScales, updateCharacterScale]);
+
   // Handle progress bar click with ref
   const onProgressBarClick = useCallback((e) => {
     handleProgressBarClick(e, progressBarRef);
@@ -277,6 +331,7 @@ export default function FBXViewer() {
             selectedBone={selectedBone}
             boneList={boneList}
             characterScales={characterScales}
+            normalizeScale={normalizeScale}
             loadingProgress={loadingProgress}
             animationDetails={animationDetails}
             isPanelCollapsed={isPanelCollapsed}
@@ -287,6 +342,7 @@ export default function FBXViewer() {
             onToggleCharacterVisibility={handleToggleCharacterVisibility}
             onToggleBoneVisibility={handleToggleBoneVisibility}
             onBoneSelection={handleBoneSelection}
+            onToggleNormalize={handleToggleNormalize}
             onUnloadCharacter={handleUnloadCharacter}
             onScaleChange={handleScaleChange}
             />

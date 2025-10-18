@@ -461,6 +461,11 @@ body {
     appearance: none;
 }
 
+.scale-slider:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
 .scale-slider::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
